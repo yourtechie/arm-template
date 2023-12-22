@@ -1,0 +1,252 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "networkInterfaces_maryvmVMNic_name": {
+      "defaultValue": "maryvmVMNic",
+      "type": "String"
+    },
+    "networkSecurityGroups_maryvmNSG_name": {
+      "defaultValue": "maryvmNSG",
+      "type": "String"
+    },
+    "publicIPAddresses_maryvmPublicIP_name": {
+      "defaultValue": "maryvmPublicIP",
+      "type": "String"
+    },
+    "virtualMachines_maryvm_name": {
+      "defaultValue": "maryvm",
+      "type": "String"
+    },
+    "virtualNetworks_maryvmVNET_name": {
+      "defaultValue": "maryvmVNET",
+      "type": "String"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2023-06-01",
+      "location": "eastus",
+      "name": "[parameters('networkSecurityGroups_maryvmNSG_name')]",
+      "properties": {
+        "securityRules": [
+          {
+            "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_maryvmNSG_name'), 'default-allow-ssh')]",
+            "name": "default-allow-ssh",
+            "properties": {
+              "access": "Allow",
+              "destinationAddressPrefix": "*",
+              "destinationAddressPrefixes": [],
+              "destinationPortRange": "22",
+              "destinationPortRanges": [],
+              "direction": "Inbound",
+              "priority": 1000,
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourceAddressPrefixes": [],
+              "sourcePortRange": "*",
+              "sourcePortRanges": []
+            },
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules"
+          }
+        ]
+      },
+      "type": "Microsoft.Network/networkSecurityGroups"
+    },
+    {
+      "apiVersion": "2023-06-01",
+      "location": "eastus",
+      "name": "[parameters('publicIPAddresses_maryvmPublicIP_name')]",
+      "properties": {
+        "idleTimeoutInMinutes": 4,
+        "ipAddress": "20.228.145.142",
+        "ipTags": [],
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Static"
+      },
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "type": "Microsoft.Network/publicIPAddresses"
+    },
+    {
+      "apiVersion": "2023-06-01",
+      "location": "eastus",
+      "name": "[parameters('virtualNetworks_maryvmVNET_name')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        },
+        "enableDdosProtection": false,
+        "subnets": [
+          {
+            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_maryvmVNET_name'), 'maryvmSubnet')]",
+            "name": "maryvmSubnet",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24",
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            },
+            "type": "Microsoft.Network/virtualNetworks/subnets"
+          }
+        ],
+        "virtualNetworkPeerings": []
+      },
+      "type": "Microsoft.Network/virtualNetworks"
+    },
+    {
+      "apiVersion": "2023-03-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_maryvmVMNic_name'))]"
+      ],
+      "location": "eastus",
+      "name": "[parameters('virtualMachines_maryvm_name')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1_v2"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_maryvmVMNic_name'))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "adminUsername": "azureuser",
+          "allowExtensionOperations": true,
+          "computerName": "[parameters('virtualMachines_maryvm_name')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false,
+            "enableVMAgentPlatformUpdates": false,
+            "patchSettings": {
+              "assessmentMode": "ImageDefault",
+              "patchMode": "ImageDefault"
+            },
+            "provisionVMAgent": true
+          },
+          "requireGuestProvisionSignal": true,
+          "secrets": []
+        },
+        "securityProfile": {
+          "securityType": "TrustedLaunch",
+          "uefiSettings": {
+            "secureBootEnabled": true,
+            "vTpmEnabled": true
+          }
+        },
+        "storageProfile": {
+          "dataDisks": [],
+          "diskControllerType": "SCSI",
+          "imageReference": {
+            "offer": "0001-com-ubuntu-server-jammy",
+            "publisher": "Canonical",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "deleteOption": "Detach",
+            "diskSizeGB": 30,
+            "managedDisk": {
+              "id": "[resourceId('Microsoft.Compute/disks', concat(parameters('virtualMachines_maryvm_name'), '_disk1_e48f9d7069ef4a20aa98876d3bf52133'))]",
+              "storageAccountType": "Premium_LRS"
+            },
+            "name": "[concat(parameters('virtualMachines_maryvm_name'), '_disk1_e48f9d7069ef4a20aa98876d3bf52133')]",
+            "osType": "Linux"
+          }
+        }
+      },
+      "type": "Microsoft.Compute/virtualMachines"
+    },
+    {
+      "apiVersion": "2023-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_maryvmNSG_name'))]"
+      ],
+      "name": "[concat(parameters('networkSecurityGroups_maryvmNSG_name'), '/default-allow-ssh')]",
+      "properties": {
+        "access": "Allow",
+        "destinationAddressPrefix": "*",
+        "destinationAddressPrefixes": [],
+        "destinationPortRange": "22",
+        "destinationPortRanges": [],
+        "direction": "Inbound",
+        "priority": 1000,
+        "protocol": "Tcp",
+        "sourceAddressPrefix": "*",
+        "sourceAddressPrefixes": [],
+        "sourcePortRange": "*",
+        "sourcePortRanges": []
+      },
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules"
+    },
+    {
+      "apiVersion": "2023-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_maryvmVNET_name'))]"
+      ],
+      "name": "[concat(parameters('virtualNetworks_maryvmVNET_name'), '/maryvmSubnet')]",
+      "properties": {
+        "addressPrefix": "10.0.0.0/24",
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      },
+      "type": "Microsoft.Network/virtualNetworks/subnets"
+    },
+    {
+      "apiVersion": "2023-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_maryvmPublicIP_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_maryvmVNET_name'), 'maryvmSubnet')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_maryvmNSG_name'))]"
+      ],
+      "kind": "Regular",
+      "location": "eastus",
+      "name": "[parameters('networkInterfaces_maryvmVMNic_name')]",
+      "properties": {
+        "auxiliaryMode": "None",
+        "auxiliarySku": "None",
+        "disableTcpStateTracking": false,
+        "dnsSettings": {
+          "dnsServers": []
+        },
+        "enableAcceleratedNetworking": false,
+        "enableIPForwarding": false,
+        "ipConfigurations": [
+          {
+            "etag": "W/\"0efa2839-a91f-4056-92df-15d3162843de\"",
+            "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_maryvmVMNic_name')), '/ipConfigurations/ipconfigmaryvm')]",
+            "name": "ipconfigmaryvm",
+            "properties": {
+              "primary": true,
+              "privateIPAddress": "10.0.0.4",
+              "privateIPAddressVersion": "IPv4",
+              "privateIPAllocationMethod": "Dynamic",
+              "provisioningState": "Succeeded",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_maryvmPublicIP_name'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_maryvmVNET_name'), 'maryvmSubnet')]"
+              }
+            },
+            "type": "Microsoft.Network/networkInterfaces/ipConfigurations"
+          }
+        ],
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_maryvmNSG_name'))]"
+        },
+        "nicType": "Standard"
+      },
+      "type": "Microsoft.Network/networkInterfaces"
+    }
+  ],
+  "variables": {}
+}
