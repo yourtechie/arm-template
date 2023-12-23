@@ -10,6 +10,7 @@ az group create -n yourtechie-prod-rgp -l eastus
 
 az group deployment create --template-file simpletemplate.json --parameters networkInterfaces_testVmVMNic_name=yourtechieProdNic networkSecurityGroups_testVmNSG_name=yourtechieProdNSG publicIPAddresses_testVmPublicIP_name=yourtechieProdPublicIP virtualMachines_testVm_name=yourtechieProdVm virtualNetworks_testVmVNET_name=yourtechieProdVNET -g yourtechie-prod-rgp
 
+I remodified the simpletemplate.json file:
 I had to delete line 135 ->           
                             "requireGuestProvisionSignal": true,
 and 
