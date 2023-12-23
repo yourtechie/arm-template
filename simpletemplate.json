@@ -2,24 +2,19 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "networkInterfaces_maryvmVMNic_name": {
-      "defaultValue": "maryvmVMNic",
+    "networkInterfaces_testVmVMNic_name": {
       "type": "String"
     },
-    "networkSecurityGroups_maryvmNSG_name": {
-      "defaultValue": "maryvmNSG",
+    "networkSecurityGroups_testVmNSG_name": {
       "type": "String"
     },
-    "publicIPAddresses_maryvmPublicIP_name": {
-      "defaultValue": "maryvmPublicIP",
+    "publicIPAddresses_testVmPublicIP_name": {
       "type": "String"
     },
-    "virtualMachines_maryvm_name": {
-      "defaultValue": "maryvm",
+    "virtualMachines_testVm_name": {
       "type": "String"
     },
-    "virtualNetworks_maryvmVNET_name": {
-      "defaultValue": "maryvmVNET",
+    "virtualNetworks_testVmVNET_name": {
       "type": "String"
     }
   },
@@ -27,11 +22,11 @@
     {
       "apiVersion": "2023-06-01",
       "location": "eastus",
-      "name": "[parameters('networkSecurityGroups_maryvmNSG_name')]",
+      "name": "[parameters('networkSecurityGroups_testVmNSG_name')]",
       "properties": {
         "securityRules": [
           {
-            "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_maryvmNSG_name'), 'default-allow-ssh')]",
+            "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_testVmNSG_name'), 'default-allow-ssh')]",
             "name": "default-allow-ssh",
             "properties": {
               "access": "Allow",
@@ -56,10 +51,10 @@
     {
       "apiVersion": "2023-06-01",
       "location": "eastus",
-      "name": "[parameters('publicIPAddresses_maryvmPublicIP_name')]",
+      "name": "[parameters('publicIPAddresses_testVmPublicIP_name')]",
       "properties": {
         "idleTimeoutInMinutes": 4,
-        "ipAddress": "20.228.145.142",
+        "ipAddress": "23.100.23.207",
         "ipTags": [],
         "publicIPAddressVersion": "IPv4",
         "publicIPAllocationMethod": "Static"
@@ -73,7 +68,7 @@
     {
       "apiVersion": "2023-06-01",
       "location": "eastus",
-      "name": "[parameters('virtualNetworks_maryvmVNET_name')]",
+      "name": "[parameters('virtualNetworks_testVmVNET_name')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -83,8 +78,8 @@
         "enableDdosProtection": false,
         "subnets": [
           {
-            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_maryvmVNET_name'), 'maryvmSubnet')]",
-            "name": "maryvmSubnet",
+            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_testVmVNET_name'), 'testVmSubnet')]",
+            "name": "testVmSubnet",
             "properties": {
               "addressPrefix": "10.0.0.0/24",
               "delegations": [],
@@ -101,35 +96,42 @@
     {
       "apiVersion": "2023-03-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_maryvmVMNic_name'))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_testVmVMNic_name'))]"
       ],
       "location": "eastus",
-      "name": "[parameters('virtualMachines_maryvm_name')]",
+      "name": "[parameters('virtualMachines_testVm_name')]",
       "properties": {
         "hardwareProfile": {
-          "vmSize": "Standard_DS1_v2"
+          "vmSize": "Standard_B1s"
         },
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_maryvmVMNic_name'))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_testVmVMNic_name'))]"
             }
           ]
         },
         "osProfile": {
           "adminUsername": "azureuser",
           "allowExtensionOperations": true,
-          "computerName": "[parameters('virtualMachines_maryvm_name')]",
+          "computerName": "[parameters('virtualMachines_testVm_name')]",
           "linuxConfiguration": {
-            "disablePasswordAuthentication": false,
+            "disablePasswordAuthentication": true,
             "enableVMAgentPlatformUpdates": false,
             "patchSettings": {
               "assessmentMode": "ImageDefault",
               "patchMode": "ImageDefault"
             },
-            "provisionVMAgent": true
+            "provisionVMAgent": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDMo3kUiEPps0omj9IGmK7udDVUYyqUhVHp1U4EqClnGTDt7sd97CyUFutZ9apdG5sXqIZUzNgfRY8oqsb5e4rVJ4uJ1FtGZXONP70ft2c00TyqxOGgUkZ2d2MPbPveTscf8zKp9UNbhG2TA0qNFG/8hCzWM+AZa4SB3q96QB/q182ZoT1hVROUWvBSMV3xUu1aPeb/K6dLB8iApiJrMov1MQHetRnk3X0CDENr59g2n1X9LzEMAVsI1KHdOb2phmNKoJXD+CUDg3DSn5bVhMy5+RPIyyrW/PZDhaPbieKDMXtXJA1bDrApzOkHnyTiRvP3kkwQVkXsBZsugO6+qLAL",
+                  "path": "/home/azureuser/.ssh/authorized_keys"
+                }
+              ]
+            }
           },
-          "requireGuestProvisionSignal": true,
           "secrets": []
         },
         "securityProfile": {
@@ -154,10 +156,9 @@
             "deleteOption": "Detach",
             "diskSizeGB": 30,
             "managedDisk": {
-              "id": "[resourceId('Microsoft.Compute/disks', concat(parameters('virtualMachines_maryvm_name'), '_disk1_e48f9d7069ef4a20aa98876d3bf52133'))]",
               "storageAccountType": "Premium_LRS"
             },
-            "name": "[concat(parameters('virtualMachines_maryvm_name'), '_disk1_e48f9d7069ef4a20aa98876d3bf52133')]",
+            "name": "[concat(parameters('virtualMachines_testVm_name'), '_disk1_939d66973e0d4b49b4bcf25131e2460d')]",
             "osType": "Linux"
           }
         }
@@ -167,9 +168,9 @@
     {
       "apiVersion": "2023-06-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_maryvmNSG_name'))]"
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_testVmNSG_name'))]"
       ],
-      "name": "[concat(parameters('networkSecurityGroups_maryvmNSG_name'), '/default-allow-ssh')]",
+      "name": "[concat(parameters('networkSecurityGroups_testVmNSG_name'), '/default-allow-ssh')]",
       "properties": {
         "access": "Allow",
         "destinationAddressPrefix": "*",
@@ -189,9 +190,9 @@
     {
       "apiVersion": "2023-06-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_maryvmVNET_name'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_testVmVNET_name'))]"
       ],
-      "name": "[concat(parameters('virtualNetworks_maryvmVNET_name'), '/maryvmSubnet')]",
+      "name": "[concat(parameters('virtualNetworks_testVmVNET_name'), '/testVmSubnet')]",
       "properties": {
         "addressPrefix": "10.0.0.0/24",
         "delegations": [],
@@ -203,13 +204,13 @@
     {
       "apiVersion": "2023-06-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_maryvmPublicIP_name'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_maryvmVNET_name'), 'maryvmSubnet')]",
-        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_maryvmNSG_name'))]"
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_testVmPublicIP_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_testVmVNET_name'), 'testVmSubnet')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_testVmNSG_name'))]"
       ],
       "kind": "Regular",
       "location": "eastus",
-      "name": "[parameters('networkInterfaces_maryvmVMNic_name')]",
+      "name": "[parameters('networkInterfaces_testVmVMNic_name')]",
       "properties": {
         "auxiliaryMode": "None",
         "auxiliarySku": "None",
@@ -221,9 +222,9 @@
         "enableIPForwarding": false,
         "ipConfigurations": [
           {
-            "etag": "W/\"0efa2839-a91f-4056-92df-15d3162843de\"",
-            "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_maryvmVMNic_name')), '/ipConfigurations/ipconfigmaryvm')]",
-            "name": "ipconfigmaryvm",
+            "etag": "W/\"10d5408b-e405-45c9-b278-c65258e0bf08\"",
+            "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_testVmVMNic_name')), '/ipConfigurations/ipconfigtestVm')]",
+            "name": "ipconfigtestVm",
             "properties": {
               "primary": true,
               "privateIPAddress": "10.0.0.4",
@@ -231,17 +232,17 @@
               "privateIPAllocationMethod": "Dynamic",
               "provisioningState": "Succeeded",
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_maryvmPublicIP_name'))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_testVmPublicIP_name'))]"
               },
               "subnet": {
-                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_maryvmVNET_name'), 'maryvmSubnet')]"
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_testVmVNET_name'), 'testVmSubnet')]"
               }
             },
             "type": "Microsoft.Network/networkInterfaces/ipConfigurations"
           }
         ],
         "networkSecurityGroup": {
-          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_maryvmNSG_name'))]"
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_testVmNSG_name'))]"
         },
         "nicType": "Standard"
       },
